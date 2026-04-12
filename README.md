@@ -28,6 +28,18 @@ A COCO-style object detector that labels cats as `cat` is suitable.
 - Choose MP3 file from device storage
 - Persists selected camera and MP3 URI
 - Cooldown to avoid repeated alarm spam
+- Sends a Cronitor heartbeat every minute while the app is active
+
+## Cronitor heartbeat
+
+Cronitor configuration lives in the project root `cronitor.properties` file, which is ignored by git.
+
+The app auto-provisions or updates a heartbeat monitor by sending a request every 60 seconds to:
+
+- monitor key: `cat-alarm-app`
+- environment: `production`
+
+To change those values locally, edit `cronitor.properties`.
 
 ## Main files
 

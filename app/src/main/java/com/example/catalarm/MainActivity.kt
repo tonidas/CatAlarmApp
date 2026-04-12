@@ -20,6 +20,7 @@ import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
 import com.example.catalarm.databinding.ActivityMainBinding
 import java.io.FileNotFoundException
 import java.util.concurrent.ExecutorService
@@ -39,6 +40,7 @@ class MainActivity : AppCompatActivity() {
     private var catDetector: CatDetector? = null
     private val isAnalyzing = AtomicBoolean(false)
     private var lastPlayedAt = 0L
+    private lateinit var cronitorHeartbeat: CronitorHeartbeat
 
     private lateinit var modelInputPreview: ImageView
 
@@ -75,6 +77,7 @@ class MainActivity : AppCompatActivity() {
 
         preferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
         cameraExecutor = Executors.newSingleThreadExecutor()
+        cronitorHeartbeat = CronitorHeartbeat(lifecycleScope)
 
         restoreSavedSettings()
         initializeDetector()
@@ -88,7 +91,18 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    override fun onStart() {
+        super.onStart()
+        cronitorHeartbeat.start()
+    }
+
+    override fun onStop() {
+        cronitorHeartbeat.stop()
+        super.onStop()
+    }
+
     override fun onDestroy() {
+        cronitorHeartbeat.stop()
         mediaPlayer?.release()
         cameraExecutor.shutdown()
         super.onDestroy()
