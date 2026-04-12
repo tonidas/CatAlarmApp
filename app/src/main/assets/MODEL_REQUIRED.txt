@@ -1,0 +1,7 @@
+Place your TensorFlow Lite object detection model here as:
+cat_detector.tflite
+
+Requirements:
+- object detection model
+- metadata labels included
+- label name must contain: cat

@@ -1,0 +1,26 @@
+# Gradle
+.gradle/
+build/
+*/build/
+
+# Local configuration
+local.properties
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+
+# Generated files
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Signing files
+*.jks
+*.keystore
+
+# OS / editor artifacts
+.DS_Store
+Thumbs.db
+*.swp
+*.swo

@@ -1,0 +1,5 @@
+<resources>
+    <string name='app_name'>Cat Alarm</string>
+    <string name='pause_detection'>Pause detection</string>
+    <string name='resume_detection'>Resume detection</string>
+</resources>

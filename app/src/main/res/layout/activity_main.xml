@@ -1,0 +1,107 @@
+<?xml version='1.0' encoding='utf-8'?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android='http://schemas.android.com/apk/res/android'
+    xmlns:app='http://schemas.android.com/apk/res-auto'
+    android:layout_width='match_parent'
+    android:layout_height='match_parent'>
+
+    <androidx.camera.view.PreviewView
+        android:id='@+id/previewView'
+        android:layout_width='0dp'
+        android:layout_height='0dp'
+        app:implementationMode='performance'
+        app:layout_constraintBottom_toTopOf='@+id/controlCard'
+        app:layout_constraintEnd_toEndOf='parent'
+        app:layout_constraintStart_toStartOf='parent'
+        app:layout_constraintTop_toTopOf='parent' />
+    <ImageView
+        android:id="@+id/modelInputPreview"
+        android:layout_width="200dp"
+        android:layout_height="200dp"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="12dp"
+        android:scaleType="fitCenter"
+        android:background="#88000000"/>
+
+    <com.google.android.material.card.MaterialCardView
+        android:id='@+id/controlCard'
+        android:layout_width='0dp'
+        android:layout_height='wrap_content'
+        android:layout_margin='12dp'
+        app:cardUseCompatPadding='true'
+        app:layout_constraintBottom_toBottomOf='parent'
+        app:layout_constraintEnd_toEndOf='parent'
+        app:layout_constraintStart_toStartOf='parent'>
+
+        <LinearLayout
+            android:layout_width='match_parent'
+            android:layout_height='wrap_content'
+            android:orientation='vertical'
+            android:padding='16dp'>
+
+            <TextView
+                android:id='@+id/statusText'
+                android:layout_width='match_parent'
+                android:layout_height='wrap_content'
+                android:text='Status: waiting for permissions'
+                android:textAppearance='@style/TextAppearance.Material3.BodyLarge'
+                android:textStyle='bold' />
+
+            <TextView
+                android:layout_width='match_parent'
+                android:layout_height='wrap_content'
+                android:layout_marginTop='8dp'
+                android:text='TensorFlow Lite local detector. Put a model named cat_detector.tflite in app/src/main/assets before building.' />
+
+            <RadioGroup
+                android:id='@+id/cameraGroup'
+                android:layout_width='match_parent'
+                android:layout_height='wrap_content'
+                android:layout_marginTop='12dp'
+                android:orientation='horizontal'>
+
+                <RadioButton
+                    android:id='@+id/backCameraRadio'
+                    android:layout_width='wrap_content'
+                    android:layout_height='wrap_content'
+                    android:checked='true'
+                    android:text='Back camera' />
+
+                <RadioButton
+                    android:id='@+id/frontCameraRadio'
+                    android:layout_width='wrap_content'
+                    android:layout_height='wrap_content'
+                    android:layout_marginStart='24dp'
+                    android:text='Front camera' />
+            </RadioGroup>
+
+            <TextView
+                android:id='@+id/audioPathText'
+                android:layout_width='match_parent'
+                android:layout_height='wrap_content'
+                android:layout_marginTop='12dp'
+                android:text='MP3: not selected' />
+
+            <LinearLayout
+                android:layout_width='match_parent'
+                android:layout_height='wrap_content'
+                android:layout_marginTop='12dp'
+                android:gravity='end'
+                android:orientation='horizontal'>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id='@+id/selectMp3Button'
+                    android:layout_width='wrap_content'
+                    android:layout_height='wrap_content'
+                    android:text='Select MP3' />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id='@+id/toggleDetectionButton'
+                    android:layout_width='wrap_content'
+                    android:layout_height='wrap_content'
+                    android:layout_marginStart='12dp'
+                    android:text='Pause detection' />
+            </LinearLayout>
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
