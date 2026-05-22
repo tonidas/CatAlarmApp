@@ -1,4 +1,4 @@
-package com.example.catalarm
+package com.ton.catalarm
 
 import android.graphics.Bitmap
 import android.graphics.Matrix
@@ -10,3 +10,4 @@ object BitmapUtils {
         return Bitmap.createBitmap(source, 0, 0, source.width, source.height, matrix, true)
     }
 }
+

@@ -1,4 +1,4 @@
-package com.example.catalarm
+package com.ton.catalarm
 
 import android.util.Log
 import kotlinx.coroutines.CoroutineScope
@@ -13,12 +13,15 @@ import java.net.URL
 import java.net.URLEncoder
 
 class CronitorHeartbeat(
-    private val scope: CoroutineScope
+    private val scope: CoroutineScope,
+    private val apiKey: String,
+    private val monitorKey: String,
+    private val env: String
 ) {
     private var heartbeatJob: Job? = null
 
     fun start() {
-        if (BuildConfig.CRONITOR_API_KEY.isBlank() || heartbeatJob?.isActive == true) {
+        if (apiKey.isBlank() || heartbeatJob?.isActive == true) {
             return
         }
 
@@ -59,9 +62,9 @@ class CronitorHeartbeat(
     }
 
     private fun buildHeartbeatUrl(): String {
-        val encodedMonitorKey = URLEncoder.encode(BuildConfig.CRONITOR_MONITOR_KEY, Charsets.UTF_8.name())
-        val encodedEnv = URLEncoder.encode(BuildConfig.CRONITOR_ENV, Charsets.UTF_8.name())
-        return "https://cronitor.link/p/${BuildConfig.CRONITOR_API_KEY}/$encodedMonitorKey?env=$encodedEnv"
+        val encodedMonitorKey = URLEncoder.encode(monitorKey, Charsets.UTF_8.name())
+        val encodedEnv = URLEncoder.encode(env, Charsets.UTF_8.name())
+        return "https://cronitor.link/p/$apiKey/$encodedMonitorKey?env=$encodedEnv"
     }
 
     companion object {

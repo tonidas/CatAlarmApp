@@ -5,7 +5,7 @@ build/
 
 # Local configuration
 local.properties
-cronitor.properties
+app.properties
 
 # Android Studio / IntelliJ
 .idea/

@@ -4,7 +4,7 @@ plugins {
 }
 
 def cronitorProperties = new Properties()
-def cronitorPropertiesFile = rootProject.file('cronitor.properties')
+def cronitorPropertiesFile = rootProject.file('app.properties')
 if (cronitorPropertiesFile.exists()) {
     cronitorPropertiesFile.withInputStream { cronitorProperties.load(it) }
 }
@@ -14,21 +14,33 @@ def toBuildConfigString = { value ->
 }
 
 android {
-    namespace 'com.example.catalarm'
-    compileSdk 34
+    namespace 'com.ton.catalarm'
+    compileSdk 35
 
     defaultConfig {
-        applicationId 'com.example.catalarm'
+        applicationId 'com.ton.catalarm'
         minSdk 26
-        targetSdk 34
+        targetSdk 35
         versionCode 2
         versionName '2.0'
 
         buildConfigField 'String', 'CRONITOR_API_KEY', toBuildConfigString(cronitorProperties.getProperty('CRONITOR_API_KEY', ''))
         buildConfigField 'String', 'CRONITOR_MONITOR_KEY', toBuildConfigString(cronitorProperties.getProperty('CRONITOR_MONITOR_KEY', 'cat-alarm-app'))
         buildConfigField 'String', 'CRONITOR_ENV', toBuildConfigString(cronitorProperties.getProperty('CRONITOR_ENV', 'production'))
+        buildConfigField 'String', 'THING_SMART_KEY', toBuildConfigString(cronitorProperties.getProperty('THING_SMART_KEY', ''))
+        buildConfigField 'String', 'THING_SMART_SECRET', toBuildConfigString(cronitorProperties.getProperty('THING_SMART_SECRET', ''))
+        buildConfigField 'String', 'THING_SMART_COUNTRY_CODE', toBuildConfigString(cronitorProperties.getProperty('THING_SMART_COUNTRY_CODE', ''))
+        buildConfigField 'String', 'THING_SMART_USERNAME', toBuildConfigString(cronitorProperties.getProperty('THING_SMART_USERNAME', ''))
+        buildConfigField 'String', 'THING_SMART_PASSWORD', toBuildConfigString(cronitorProperties.getProperty('THING_SMART_PASSWORD', ''))
 
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
+
+        ndk {
+            abiFilters "armeabi-v7a", "arm64-v8a"
+        }
+    }
+    packagingOptions {
+        pickFirst 'lib/*/libc++_shared.so' // An Android Archive (AAR) file contains an Android library. If the .so file exists in multiple AAR files, select the first AAR file.
     }
 
     buildTypes {
@@ -52,16 +64,15 @@ android {
         viewBinding true
     }
 
-    packaging {
-        resources {
-            excludes += '/META-INF/{AL2.0,LGPL2.1}'
-        }
+    configurations.all {
+        exclude group: "com.thingclips.smart" ,module: 'thingsmart-modularCampAnno'
     }
 }
 
 dependencies {
     def camerax_version = '1.3.4'
 
+    implementation fileTree(dir: 'libs', include: ['*.aar'])
     implementation 'androidx.core:core-ktx:1.13.1'
     implementation 'androidx.appcompat:appcompat:1.7.0'
     implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.8.4'
@@ -76,4 +87,7 @@ dependencies {
     implementation 'org.tensorflow:tensorflow-lite:2.14.0'
     implementation 'org.tensorflow:tensorflow-lite-support:0.4.4'
     implementation 'org.tensorflow:tensorflow-lite-task-vision:0.4.4'
+    implementation 'com.alibaba:fastjson:1.2.83'
+    implementation 'com.squareup.okhttp3:okhttp:3.14.9'
+    implementation('com.thingclips.smart:thingsmart:7.5.6')
 }

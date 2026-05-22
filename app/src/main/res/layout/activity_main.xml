@@ -17,10 +17,16 @@
         android:id="@+id/modelInputPreview"
         android:layout_width="200dp"
         android:layout_height="200dp"
-        android:layout_gravity="bottom|end"
         android:layout_margin="12dp"
+        android:background="#88000000"
+        android:contentDescription="@null"
         android:scaleType="fitCenter"
-        android:background="#88000000"/>
+        app:layout_constraintHorizontal_bias='1.0'
+        app:layout_constraintBottom_toBottomOf='@id/previewView'
+        app:layout_constraintEnd_toEndOf='@id/previewView'
+        app:layout_constraintStart_toStartOf='@id/previewView'
+        app:layout_constraintTop_toTopOf='@id/previewView'
+        app:layout_constraintVertical_bias='1.0' />
 
     <com.google.android.material.card.MaterialCardView
         android:id='@+id/controlCard'
@@ -42,15 +48,29 @@
                 android:id='@+id/statusText'
                 android:layout_width='match_parent'
                 android:layout_height='wrap_content'
-                android:text='Status: waiting for permissions'
+                android:text='@string/status_waiting_for_permissions'
                 android:textAppearance='@style/TextAppearance.Material3.BodyLarge'
                 android:textStyle='bold' />
+
+            <TextView
+                android:id='@+id/fingerbotSequenceIndicator'
+                android:layout_width='wrap_content'
+                android:layout_height='wrap_content'
+                android:layout_marginTop='6dp'
+                android:background='#14232F3E'
+                android:paddingStart='8dp'
+                android:paddingTop='4dp'
+                android:paddingEnd='8dp'
+                android:paddingBottom='4dp'
+                android:text='@string/fingerbot_sequence_indicator_unavailable'
+                android:textAppearance='@style/TextAppearance.Material3.BodySmall'
+                android:textColor='#22313F' />
 
             <TextView
                 android:layout_width='match_parent'
                 android:layout_height='wrap_content'
                 android:layout_marginTop='8dp'
-                android:text='TensorFlow Lite local detector. Put a model named cat_detector.tflite in app/src/main/assets before building.' />
+                android:text='@string/detector_hint' />
 
             <RadioGroup
                 android:id='@+id/cameraGroup'
@@ -64,14 +84,14 @@
                     android:layout_width='wrap_content'
                     android:layout_height='wrap_content'
                     android:checked='true'
-                    android:text='Back camera' />
+                    android:text='@string/back_camera' />
 
                 <RadioButton
                     android:id='@+id/frontCameraRadio'
                     android:layout_width='wrap_content'
                     android:layout_height='wrap_content'
                     android:layout_marginStart='24dp'
-                    android:text='Front camera' />
+                    android:text='@string/front_camera' />
             </RadioGroup>
 
             <TextView
@@ -79,7 +99,7 @@
                 android:layout_width='match_parent'
                 android:layout_height='wrap_content'
                 android:layout_marginTop='12dp'
-                android:text='MP3: not selected' />
+                android:text='@string/audio_not_selected' />
 
             <LinearLayout
                 android:layout_width='match_parent'
@@ -92,15 +112,84 @@
                     android:id='@+id/selectMp3Button'
                     android:layout_width='wrap_content'
                     android:layout_height='wrap_content'
-                    android:text='Select MP3' />
+                    android:text='@string/select_mp3' />
 
                 <com.google.android.material.button.MaterialButton
                     android:id='@+id/toggleDetectionButton'
                     android:layout_width='wrap_content'
                     android:layout_height='wrap_content'
                     android:layout_marginStart='12dp'
-                    android:text='Pause detection' />
+                    android:text='@string/pause_detection' />
             </LinearLayout>
+
+            <LinearLayout
+                android:layout_width='match_parent'
+                android:layout_height='wrap_content'
+                android:layout_marginTop='8dp'
+                android:gravity='end'
+                android:orientation='horizontal'>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id='@+id/pairFingerbotButton'
+                    android:layout_width='wrap_content'
+                    android:layout_height='wrap_content'
+                    android:text='@string/pair_fingerbot' />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id='@+id/activateFingerbotButton'
+                    android:layout_width='wrap_content'
+                    android:layout_height='wrap_content'
+                    android:layout_marginStart='12dp'
+                    android:text='@string/activate_fingerbot' />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width='match_parent'
+                android:layout_height='wrap_content'
+                android:layout_marginTop='8dp'
+                android:gravity='end'
+                android:orientation='horizontal'>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id='@+id/unpairFingerbotButton'
+                    style='@style/Widget.Material3.Button.OutlinedButton'
+                    android:layout_width='wrap_content'
+                    android:layout_height='wrap_content'
+                    android:text='@string/unpair_fingerbot' />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width='match_parent'
+                android:layout_height='wrap_content'
+                android:layout_marginTop='16dp'
+                android:gravity='center_vertical'
+                android:orientation='horizontal'>
+
+                <TextView
+                    android:id='@+id/pairedBluetoothTitle'
+                    android:layout_width='0dp'
+                    android:layout_height='wrap_content'
+                    android:layout_weight='1'
+                    android:text='@string/paired_bluetooth_devices'
+                    android:textAppearance='@style/TextAppearance.Material3.TitleMedium'
+                    android:textStyle='bold' />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id='@+id/refreshBluetoothDevicesButton'
+                    style='@style/Widget.Material3.Button.TextButton'
+                    android:layout_width='wrap_content'
+                    android:layout_height='wrap_content'
+                    android:text='@string/refresh' />
+            </LinearLayout>
+
+            <TextView
+                android:id='@+id/pairedBluetoothDevicesText'
+                android:layout_width='match_parent'
+                android:layout_height='wrap_content'
+                android:layout_marginTop='8dp'
+                android:fontFamily='monospace'
+                android:text='@string/paired_bluetooth_devices_placeholder'
+                android:textAppearance='@style/TextAppearance.Material3.BodyMedium' />
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
