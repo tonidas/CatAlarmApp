@@ -855,6 +855,7 @@ class MainActivity : AppCompatActivity() {
         pendingSecondFingerbotActivationJob = lifecycleScope.launch {
             delay(FINGERBOT_SECOND_ACTIVATION_DELAY_MS)
             pendingSecondFingerbotActivationJob = null
+
             requestFingerbotActivation(
                 preparingStatus = "Status: cat detected earlier, running second Fingerbot activation...",
                 onSuccess = {

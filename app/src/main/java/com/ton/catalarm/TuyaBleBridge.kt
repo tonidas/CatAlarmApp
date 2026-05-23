@@ -19,7 +19,6 @@ import com.thingclips.smart.android.ble.api.LeConnectResponse
 import com.thingclips.smart.android.ble.api.LeScanSetting
 import com.thingclips.smart.android.ble.api.ScanDeviceBean
 import com.thingclips.smart.android.ble.api.ScanType
-import com.thingclips.smart.android.device.bean.SchemaBean
 import com.thingclips.smart.android.user.api.ILoginCallback
 import com.thingclips.smart.android.user.api.IRegisterCallback
 import com.thingclips.smart.android.user.bean.User
@@ -61,10 +60,9 @@ data class TuyaDevice(
 object TuyaBleBridge {
     private const val TAG = "TuyaBleBridge"
     private const val BLE_PAIR_SCAN_TIMEOUT_MS = 60_000L
-    private const val BLE_PAIR_RESCAN_DELAY_MS = 1_000L
+    private const val BLE_PAIR_RESCAN_DELAY_MS = 250L
     private const val FINGERBOT_COMPLETION_POLL_INTERVAL_MS = 250L
-    private const val FINGERBOT_COMPLETION_SETTLE_DELAY_MS = 750L
-    private const val FINGERBOT_COMPLETION_TIMEOUT_MS = 4_000L
+    private const val FINGERBOT_COMPLETION_TIMEOUT_MS = 10_000L
     private const val FINGERBOT_COMPLETION_SYNC_INTERVAL_MS = 1_000L
 
     private enum class ActivationPublishKind {
@@ -86,14 +84,6 @@ object TuyaBleBridge {
 
     private data class FingerbotStateSnapshot(
         val values: Map<String, String>
-    )
-
-    private data class FingerbotAmplitudeAttempt(
-        val kind: ActivationPublishKind,
-        val key: String,
-        val value: Int,
-        val label: String,
-        val priority: Int
     )
 
     private data class BleConnectHint(
@@ -226,11 +216,6 @@ object TuyaBleBridge {
     private fun summarizeAttempts(attempts: List<ActivationAttempt>): String {
         if (attempts.isEmpty()) return "none"
         return attempts.joinToString { "${it.kind}:${it.key}" }
-    }
-
-    private fun summarizeAmplitudeAttempts(attempts: List<FingerbotAmplitudeAttempt>): String {
-        if (attempts.isEmpty()) return "none"
-        return attempts.joinToString { "${it.kind}:${it.key}=${it.value}" }
     }
 
     private val staticFingerbotActivationPlan = ActivationPlan(
@@ -853,42 +838,28 @@ object TuyaBleBridge {
                 onError(message)
             }
 
-            resolveFingerbotActivationPlan(
+            val plan = staticFingerbotActivationPlan
+            logInfo(
+                "Resolved Fingerbot activation plan for devId=$devId: attempts=${plan.attempts.size}, order=${summarizeAttempts(plan.attempts)} description=${plan.description}"
+            )
+            prepareFingerbotActivationChannel(
                 devId = devId,
                 homeId = homeId,
-                onSuccess = { plan ->
-                    logInfo(
-                        "Resolved Fingerbot activation plan for devId=$devId: attempts=${plan.attempts.size}, order=${summarizeAttempts(plan.attempts)}"
-                    )
-                    logDebug("Activation plan detail for devId=$devId: ${plan.description}")
-                    prepareFingerbotActivationChannel(
+                onReady = {
+                    logInfo("BLE activation channel ready for devId=$devId")
+                    attemptFingerbotActivation(
                         devId = devId,
                         homeId = homeId,
-                        onReady = {
-                            logInfo("BLE activation channel ready for devId=$devId; applying optional amplitude tuning")
-                            maximizeFingerbotAmplitude(
-                                devId = devId,
-                                homeId = homeId,
-                                device = device,
-                                onComplete = {
-                                    logDebug("Amplitude tuning completed for devId=$devId; beginning activation attempts")
-                                    attemptFingerbotActivation(
-                                        devId = devId,
-                                        homeId = homeId,
-                                        device = device,
-                                        attempts = plan.attempts,
-                                        attemptIndex = 0,
-                                        planDescription = plan.description,
-                                        channelWakeRetried = false,
-                                        onSuccess = ::finishSuccess,
-                                        onError = ::finishError
-                                    )
-                                }
-                            )
-                        },
+                        device = device,
+                        attempts = plan.attempts,
+                        attemptIndex = 0,
+                        planDescription = plan.description,
+                        channelWakeRetried = false,
+                        onSuccess = ::finishSuccess,
                         onError = ::finishError
                     )
-                }
+                },
+                onError = ::finishError
             )
         } catch (t: Throwable) {
             logError("activateFingerbot crashed for devId=$devId homeId=${formatHomeId(homeId)}", t)
@@ -938,17 +909,6 @@ object TuyaBleBridge {
         }
     }
 
-    private fun resolveFingerbotActivationPlan(
-        devId: String,
-        homeId: Long?,
-        onSuccess: (ActivationPlan) -> Unit
-    ) {
-        logInfo(
-            "Using static Fingerbot activation plan for devId=$devId homeId=${formatHomeId(homeId)}: ${staticFingerbotActivationPlan.description}"
-        )
-        onSuccess(staticFingerbotActivationPlan)
-    }
-
     private fun resolveDeviceBean(devId: String, homeId: Long?): DeviceBean? {
         return try {
             val dataManager = ThingHomeSdk.getDataInstance()
@@ -958,133 +918,6 @@ object TuyaBleBridge {
                     ?.firstOrNull { it.getDevId() == devId }
         } catch (_: Throwable) {
             null
-        }
-    }
-
-    private fun maximizeFingerbotAmplitude(
-        devId: String,
-        homeId: Long?,
-        device: IThingDevice,
-        onComplete: () -> Unit
-    ) {
-        val attempts = buildFingerbotAmplitudeAttempts(devId, resolveDeviceBean(devId, homeId))
-        if (attempts.isEmpty()) {
-            logDebug("No Fingerbot amplitude tuning required for devId=$devId")
-            onComplete()
-            return
-        }
-
-        logInfo(
-            "Applying Fingerbot amplitude tuning for devId=$devId: attempts=${attempts.size}, order=${summarizeAmplitudeAttempts(attempts)}"
-        )
-
-        applyFingerbotAmplitudeAttempt(
-            device = device,
-            attempts = attempts,
-            attemptIndex = 0,
-            onComplete = onComplete
-        )
-    }
-
-    private fun buildFingerbotAmplitudeAttempts(
-        devId: String,
-        deviceBean: DeviceBean?
-    ): List<FingerbotAmplitudeAttempt> {
-        val attempts = linkedMapOf<String, FingerbotAmplitudeAttempt>()
-        val schemaById = linkedMapOf<String, SchemaBean>()
-
-        deviceBean?.getSchemaMap()
-            ?.filterValues { it != null }
-            ?.forEach { (dpId, schema) ->
-                if (schema != null) {
-                    schemaById.putIfAbsent(dpId, schema)
-                }
-            }
-        try {
-            ThingHomeSdk.getDataInstance().getSchema(devId)
-                ?.filterValues { it != null }
-                ?.forEach { (dpId, schema) ->
-                    if (schema != null) {
-                        schemaById.putIfAbsent(dpId, schema)
-                    }
-                }
-        } catch (_: Throwable) {
-        }
-
-        val schemaEntriesByCode = schemaById.entries
-            .mapNotNull { entry ->
-                entry.value.code
-                    ?.trim()
-                    ?.takeIf { it.isNotBlank() }
-                    ?.lowercase()
-                    ?.let { it to entry }
-            }
-            .toMap()
-
-        val dpCodes = deviceBean?.getDpCodes().orEmpty()
-        val targets = listOf(
-            Triple("arm_up_percent", true, 0),
-            Triple("arm_down_percent", false, 100)
-        )
-
-        targets.forEachIndexed { index, (code, useMinValue, fallbackValue) ->
-            val schemaEntry = schemaEntriesByCode[code]
-            val schema = schemaEntry?.value
-            val hasCode = code in dpCodes || schema != null
-            if (!hasCode) return@forEachIndexed
-
-            val resolvedValue = resolveFingerbotRangeValue(schema, useMinValue, fallbackValue)
-            val priorityBase = 200 - index
-
-            attempts.putIfAbsent(
-                "COMMAND|$code",
-                FingerbotAmplitudeAttempt(
-                    kind = ActivationPublishKind.COMMAND,
-                    key = code,
-                    value = resolvedValue,
-                    label = "command `$code`=$resolvedValue",
-                    priority = priorityBase
-                )
-            )
-
-            schemaEntry?.key?.takeIf { it.isNotBlank() }?.let { dpId ->
-                attempts.putIfAbsent(
-                    "DP|$dpId",
-                    FingerbotAmplitudeAttempt(
-                        kind = ActivationPublishKind.DP,
-                        key = dpId,
-                        value = resolvedValue,
-                        label = "dp `$dpId` [$code]=$resolvedValue",
-                        priority = priorityBase - 1
-                    )
-                )
-            }
-        }
-
-        return attempts.values.sortedByDescending { it.priority }
-    }
-
-    private fun resolveFingerbotRangeValue(
-        schema: SchemaBean?,
-        useMinValue: Boolean,
-        fallbackValue: Int
-    ): Int {
-        val property = schema?.property.orEmpty().trim()
-        if (property.isBlank()) {
-            return fallbackValue
-        }
-
-        return try {
-            val propertyJson = JSON.parseObject(property)
-            val minValue = propertyJson.findInt("min")
-            val maxValue = propertyJson.findInt("max")
-            when {
-                useMinValue && minValue != null -> minValue
-                !useMinValue && maxValue != null -> maxValue
-                else -> fallbackValue
-            }
-        } catch (_: Throwable) {
-            fallbackValue
         }
     }
 
@@ -1106,91 +939,6 @@ object TuyaBleBridge {
 
         return null
     }
-
-    private fun applyFingerbotAmplitudeAttempt(
-        device: IThingDevice,
-        attempts: List<FingerbotAmplitudeAttempt>,
-        attemptIndex: Int,
-        onComplete: () -> Unit
-    ) {
-        if (attemptIndex >= attempts.size) {
-            logDebug("Finished applying Fingerbot amplitude attempts (${attempts.size} total)")
-            runDelayed(250L, onComplete)
-            return
-        }
-
-        val attempt = attempts[attemptIndex]
-        logDebug(
-            "Applying Fingerbot amplitude attempt ${attemptIndex + 1}/${attempts.size}: ${attempt.label}"
-        )
-        val callback = object : IResultCallback {
-            override fun onSuccess() {
-                logDebug("Amplitude attempt succeeded: ${attempt.label}")
-                applyFingerbotAmplitudeAttempt(
-                    device = device,
-                    attempts = attempts,
-                    attemptIndex = attemptIndex + 1,
-                    onComplete = onComplete
-                )
-            }
-
-            override fun onError(code: String?, error: String?) {
-                logWarn("Amplitude attempt failed: ${attempt.label}, code=${code.orEmpty()} error=${error.orEmpty()}")
-                applyFingerbotAmplitudeAttempt(
-                    device = device,
-                    attempts = attempts,
-                    attemptIndex = attemptIndex + 1,
-                    onComplete = onComplete
-                )
-            }
-        }
-
-        when (attempt.kind) {
-            ActivationPublishKind.COMMAND -> {
-                val payload = linkedMapOf<String, Any>(attempt.key to attempt.value)
-                try {
-                    logDebug("Publishing amplitude command payload for ${attempt.label}: $payload")
-                    device.publishCommands(payload, callback)
-                } catch (t: Throwable) {
-                    logWarn("Amplitude command publish threw for ${attempt.label}: ${t.message.orEmpty()}", t)
-                    applyFingerbotAmplitudeAttempt(
-                        device = device,
-                        attempts = attempts,
-                        attemptIndex = attemptIndex + 1,
-                        onComplete = onComplete
-                    )
-                }
-            }
-
-            ActivationPublishKind.DP -> {
-                val dps = "{\"${attempt.key}\":${attempt.value}}"
-                try {
-                    logDebug("Publishing amplitude DP payload for ${attempt.label}: $dps")
-                    val publishedWithMode = try {
-                        device.publishDps(dps, ThingDevicePublishModeEnum.ThingDevicePublishModeAuto, callback)
-                        true
-                    } catch (t: Throwable) {
-                        logWarn("Amplitude DP publish with auto mode threw for ${attempt.label}: ${t.message.orEmpty()}", t)
-                        false
-                    }
-
-                    if (!publishedWithMode) {
-                        logDebug("Retrying amplitude DP publish without mode for ${attempt.label}")
-                        device.publishDps(dps, callback)
-                    }
-                } catch (t: Throwable) {
-                    logWarn("Amplitude DP publish threw for ${attempt.label}: ${t.message.orEmpty()}", t)
-                    applyFingerbotAmplitudeAttempt(
-                        device = device,
-                        attempts = attempts,
-                        attemptIndex = attemptIndex + 1,
-                        onComplete = onComplete
-                    )
-                }
-            }
-        }
-    }
-
 
     private fun runDelayed(delayMillis: Long, action: () -> Unit): ScheduledFuture<*> {
         return scheduler.schedule(
@@ -1276,7 +1024,7 @@ object TuyaBleBridge {
                 var timeoutTask: ScheduledFuture<*>? = null
                 var unregisterStatusListener: (() -> Unit)? = null
 
-                fun finishReady(delayMillis: Long = 750L) {
+                fun finishReady(delayMillis: Long = 100L) {
                     if (!finished.compareAndSet(false, true)) return
                     logInfo("Standard BLE connect path marked ready for devId=$devId after delay=${delayMillis}ms")
                     timeoutTask?.cancel(false)
@@ -1605,6 +1353,7 @@ object TuyaBleBridge {
         logInfo(
             "Running Fingerbot activation attempt ${attemptIndex + 1}/${attempts.size} for devId=$devId via ${attempt.label}"
         )
+        val payload = linkedMapOf<String, Any>(attempt.key to true)
         val callback = object : IResultCallback {
             override fun onSuccess() {
                 logInfo("Fingerbot activation command accepted for devId=$devId via ${attempt.label}; waiting for completion state")
@@ -1614,7 +1363,8 @@ object TuyaBleBridge {
                     device = device,
                     attempt = attempt,
                     baselineState = baselineState,
-                    onComplete = onSuccess
+                    onComplete = onSuccess,
+                    payload = payload
                 )
             }
 
@@ -1710,9 +1460,16 @@ object TuyaBleBridge {
             }
         }
 
+        val callbackNoOp = object : IResultCallback {
+            override fun onSuccess() {
+            }
+
+            override fun onError(code: String?, msg: String?) {
+            }
+        }
+
         when (attempt.kind) {
             ActivationPublishKind.COMMAND -> {
-                val payload = linkedMapOf<String, Any>(attempt.key to true)
                 logDebug("Publishing Fingerbot command for devId=$devId via ${attempt.label}: $payload")
                 device.publishCommands(payload, callback)
             }
@@ -1765,7 +1522,8 @@ object TuyaBleBridge {
         device: IThingDevice,
         attempt: ActivationAttempt,
         baselineState: FingerbotStateSnapshot,
-        onComplete: () -> Unit
+        onComplete: () -> Unit,
+        payload: LinkedHashMap<String, Any>
     ) {
         val finished = AtomicBoolean(false)
         val startedAt = SystemClock.elapsedRealtime()
@@ -1775,6 +1533,14 @@ object TuyaBleBridge {
         var lastSnapshot = baselineState
         var listenerRegistered = false
         var pollTask: ScheduledFuture<*>? = null
+
+        val callbackNoOp = object : IResultCallback {
+            override fun onSuccess() {
+            }
+
+            override fun onError(code: String?, msg: String?) {
+            }
+        }
 
         fun cleanup() {
             if (listenerRegistered) {
@@ -1808,12 +1574,17 @@ object TuyaBleBridge {
 
         val listener = object : IDevListener {
             override fun onDpUpdate(devIdArg: String?, dpStr: String?) {
+                logDebug("Fingerbot status dp update callback for devId=$devId during completion wait: devIdArg=${devIdArg.orEmpty()} (devid=${devId}) dpStr=${dpStr.orEmpty()}")
                 if (!devIdArg.equals(devId, ignoreCase = true)) return
+
                 val payload = parseFingerbotDpPayload(dpStr)
                 val changes = describeDpPayloadChanges(payload, lastSnapshot)
                 if (changes.isNotEmpty()) {
                     observeActivity("onDpUpdate", changes.joinToString())
                     lastSnapshot = mergeSnapshotWithDpPayload(lastSnapshot, payload)
+                    logDebug("Fingerbot status dp update callback for devId=$devId during completion wait: payload=$payload, changes=${changes.joinToString()}")
+
+                    finishWithConfirmation("confirmed by DP/state update after observing changes: ${changes.joinToString()}")
                 }
             }
 
@@ -1858,22 +1629,19 @@ object TuyaBleBridge {
 
             val now = SystemClock.elapsedRealtime()
             when {
-                observedTrustworthyUpdate && now - lastActivityAt >= FINGERBOT_COMPLETION_SETTLE_DELAY_MS -> {
+                observedTrustworthyUpdate -> {
                     finishWithConfirmation("confirmed by DP/state update after ${now - startedAt}ms")
                 }
 
                 now - startedAt >= FINGERBOT_COMPLETION_TIMEOUT_MS -> {
                     finishWithConfirmation(
-                        if (observedTrustworthyUpdate) {
-                            "state activity observed but did not fully settle before timeout; proceeding after ${now - startedAt}ms"
-                        } else {
-                            "no trustworthy DP/state update observed; using timeout fallback after ${now - startedAt}ms"
-                        }
+                        "no trustworthy DP/state update observed; using timeout fallback after ${now - startedAt}ms"
                     )
                 }
 
                 else -> {
                     syncDeviceState()
+                    device.publishCommands(payload, callbackNoOp)
                     pollTask = runDelayed(FINGERBOT_COMPLETION_POLL_INTERVAL_MS, ::pollForCompletion)
                 }
             }
@@ -2181,7 +1949,8 @@ object TuyaBleBridge {
                 runDelayed(350L, onReady)
             }
         }
-
+        finish()
+        /*
         val callback = object : IResultCallback {
             override fun onSuccess() = finish()
             override fun onError(code: String?, error: String?) {
@@ -2197,7 +1966,7 @@ object TuyaBleBridge {
         } catch (t: Throwable) {
             logWarn("activeExtenModuleByBLEActived threw for devId=$devId: ${t.message.orEmpty()}", t)
             finish()
-        }
+        }*/
     }
 
     private fun awaitBleLocalChannelReady(
