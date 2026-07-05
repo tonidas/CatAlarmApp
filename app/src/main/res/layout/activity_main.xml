@@ -53,20 +53,6 @@
                 android:textStyle='bold' />
 
             <TextView
-                android:id='@+id/fingerbotSequenceIndicator'
-                android:layout_width='wrap_content'
-                android:layout_height='wrap_content'
-                android:layout_marginTop='6dp'
-                android:background='#14232F3E'
-                android:paddingStart='8dp'
-                android:paddingTop='4dp'
-                android:paddingEnd='8dp'
-                android:paddingBottom='4dp'
-                android:text='@string/fingerbot_sequence_indicator_unavailable'
-                android:textAppearance='@style/TextAppearance.Material3.BodySmall'
-                android:textColor='#22313F' />
-
-            <TextView
                 android:layout_width='match_parent'
                 android:layout_height='wrap_content'
                 android:layout_marginTop='8dp'
@@ -121,75 +107,6 @@
                     android:layout_marginStart='12dp'
                     android:text='@string/pause_detection' />
             </LinearLayout>
-
-            <LinearLayout
-                android:layout_width='match_parent'
-                android:layout_height='wrap_content'
-                android:layout_marginTop='8dp'
-                android:gravity='end'
-                android:orientation='horizontal'>
-
-                <com.google.android.material.button.MaterialButton
-                    android:id='@+id/pairFingerbotButton'
-                    android:layout_width='wrap_content'
-                    android:layout_height='wrap_content'
-                    android:text='@string/pair_fingerbot' />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id='@+id/activateFingerbotButton'
-                    android:layout_width='wrap_content'
-                    android:layout_height='wrap_content'
-                    android:layout_marginStart='12dp'
-                    android:text='@string/activate_fingerbot' />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width='match_parent'
-                android:layout_height='wrap_content'
-                android:layout_marginTop='8dp'
-                android:gravity='end'
-                android:orientation='horizontal'>
-
-                <com.google.android.material.button.MaterialButton
-                    android:id='@+id/unpairFingerbotButton'
-                    style='@style/Widget.Material3.Button.OutlinedButton'
-                    android:layout_width='wrap_content'
-                    android:layout_height='wrap_content'
-                    android:text='@string/unpair_fingerbot' />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width='match_parent'
-                android:layout_height='wrap_content'
-                android:layout_marginTop='16dp'
-                android:gravity='center_vertical'
-                android:orientation='horizontal'>
-
-                <TextView
-                    android:id='@+id/pairedBluetoothTitle'
-                    android:layout_width='0dp'
-                    android:layout_height='wrap_content'
-                    android:layout_weight='1'
-                    android:text='@string/paired_bluetooth_devices'
-                    android:textAppearance='@style/TextAppearance.Material3.TitleMedium'
-                    android:textStyle='bold' />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id='@+id/refreshBluetoothDevicesButton'
-                    style='@style/Widget.Material3.Button.TextButton'
-                    android:layout_width='wrap_content'
-                    android:layout_height='wrap_content'
-                    android:text='@string/refresh' />
-            </LinearLayout>
-
-            <TextView
-                android:id='@+id/pairedBluetoothDevicesText'
-                android:layout_width='match_parent'
-                android:layout_height='wrap_content'
-                android:layout_marginTop='8dp'
-                android:fontFamily='monospace'
-                android:text='@string/paired_bluetooth_devices_placeholder'
-                android:textAppearance='@style/TextAppearance.Material3.BodyMedium' />
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 

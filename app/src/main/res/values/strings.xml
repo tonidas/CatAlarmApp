@@ -8,13 +8,4 @@
     <string name='front_camera'>Front camera</string>
     <string name='audio_not_selected'>MP3: not selected</string>
     <string name='select_mp3'>Select MP3</string>
-    <string name='pair_fingerbot'>Pair Fingerbot</string>
-    <string name='activate_fingerbot'>Activate Fingerbot</string>
-    <string name='unpair_fingerbot'>Unpair Fingerbot</string>
-    <string name='fingerbot_sequence_indicator_unavailable'>○ Fingerbot auto-trigger unavailable</string>
-    <string name='fingerbot_sequence_indicator_idle'>○ Fingerbot auto-trigger idle</string>
-    <string name='fingerbot_sequence_indicator_running'>● Fingerbot auto-trigger running</string>
-    <string name='paired_bluetooth_devices'>Smart Life home devices</string>
-    <string name='refresh'>Refresh</string>
-    <string name='paired_bluetooth_devices_placeholder'>Smart Life devices will appear here.</string>
 </resources>

@@ -1,8 +1,3 @@
 CRONITOR_API_KEY=replace-with-your-cronitor-api-key
 CRONITOR_MONITOR_KEY=cat-alarm-app
 CRONITOR_ENV=production
-THING_SMART_KEY=replace-with-your-thing-smart-app-key
-THING_SMART_SECRET=replace-with-your-thing-smart-app-secret
-THING_SMART_COUNTRY_CODE=replace-with-your-thing-smart-country-code
-THING_SMART_USERNAME=replace-with-your-thing-smart-email-or-phone
-THING_SMART_PASSWORD=replace-with-your-thing-smart-password
